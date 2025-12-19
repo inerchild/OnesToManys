@@ -1,7 +1,7 @@
 
 
-//API Base URL - Update this if your backend runs on a different port
-//const API_BASE_URL = 'http://localhost:8080/api';
+// API Base URL - Update this if your backend runs on a different port
+const API_BASE_URL = 'http://localhost:8080/api';
 
 /**
  * API Module - Handles all HTTP requests to the backend

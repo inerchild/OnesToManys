@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cities & Communities - Vue.js</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <div class="container">
+            <header>
+                <h1>🏙️ Cities & Communities Manager (Vue.js)</h1>
+                <div class="stats">
+                    <div class="stat-card">
+                        <span class="stat-number">{{ cities.length }}</span>
+                        <span class="stat-label">Cities</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ communities.length }}</span>
+                        <span class="stat-label">Communities</span>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                <!-- City Section -->
+                <section class="city-section">
+                    <div class="section-header">
+                        <h2>Cities</h2>
+                        <button @click="openCityModal()" class="btn btn-primary">+ Add City</button>
+                    </div>
+                    
+                    <div v-if="cities.length === 0" class="empty-message">
+                        No cities found. Add your first city!
+                    </div>
+                    
+                    <div v-else class="city-grid">
+                        <div v-for="city in cities" :key="city.id" class="city-card">
+                            <h3>{{ city.name }}</h3>
+                            <div class="city-info">
+                                <p><strong>State:</strong> {{ city.state || 'N/A' }}</p>
+                                <p><strong>Population:</strong> {{ formatNumber(city.population) }}</p>
+                                <p><strong>Mayor:</strong> {{ city.mayor || 'N/A' }}</p>
+                            </div>
+                            <div class="card-actions">
+                                <button @click="filterByCity(city.id)" class="btn btn-view">Communities</button>
+                                <button @click="editCity(city)" class="btn btn-edit">Edit</button>
+                                <button @click="deleteCity(city.id)" class="btn btn-delete">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Community Section -->
+                <section class="community-section">
+                    <div class="section-header">
+                        <h2>Residential Communities</h2>
+                        <div class="section-controls">
+                            <select v-model="selectedCityFilter" @change="applyFilter" class="filter-select">
+                                <option value="">All Cities</option>
+                                <option v-for="city in cities" :key="city.id" :value="city.id">
+                                    {{ city.name }}
+                                </option>
+                            </select>
+                            <button @click="openCommunityModal()" class="btn btn-primary">+ Add Community</button>
+                        </div>
+                    </div>
+                    
+                    <div v-if="filteredCommunities.length === 0" class="empty-message">
+                        No communities found.
+                    </div>
+                    
+                    <div v-else class="community-grid">
+                        <div v-for="community in filteredCommunities" :key="community.id" class="community-card">
+                            <h3>{{ community.name }}</h3>
+                            <div class="community-info">
+                                <p><strong>City:</strong> {{ getCityName(community.city?.id) }}</p>
+                                <p><strong>Type:</strong> {{ community.type || 'N/A' }}</p>
+                                <p><strong>Homes:</strong> {{ formatNumber(community.numberOfHomes) }}</p>
+                                <p><strong>Year:</strong> {{ community.yearEstablished || 'N/A' }}</p>
+                                <p><strong>Amenities:</strong> {{ community.hasAmenities ? '✅ Yes' : '❌ No' }}</p>
+                            </div>
+                            <div class="card-actions">
+                                <button @click="editCommunity(community)" class="btn btn-edit">Edit</button>
+                                <button @click="deleteCommunity(community.id)" class="btn btn-delete">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- City Modal -->
+        <div v-if="showCityModal" class="modal" @click.self="closeCityModal">
+            <div class="modal-content">
+                <span class="close" @click="closeCityModal">&times;</span>
+                <h2>{{ editingCity ? 'Edit City' : 'Add City' }}</h2>
+                <form @submit.prevent="saveCityForm">
+                    <div class="form-group">
+                        <label>City Name *</label>
+                        <input v-model="cityForm.name" type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>State *</label>
+                        <input v-model="cityForm.state" type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Population</label>
+                        <input v-model.number="cityForm.population" type="number">
+                    </div>
+                    <div class="form-group">
+                        <label>Mayor</label>
+                        <input v-model="cityForm.mayor" type="text">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" @click="closeCityModal" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Community Modal -->
+        <div v-if="showCommunityModal" class="modal" @click.self="closeCommunityModal">
+            <div class="modal-content">
+                <span class="close" @click="closeCommunityModal">&times;</span>
+                <h2>{{ editingCommunity ? 'Edit Community' : 'Add Community' }}</h2>
+                <form @submit.prevent="saveCommunityForm">
+                    <div class="form-group">
+                        <label>Community Name *</label>
+                        <input v-model="communityForm.name" type="text" required>
+                    </div>
+                    <div class="form-group">
+                        <label>City *</label>
+                        <select v-model="communityForm.cityId" required>
+                            <option value="">Select a city...</option>
+                            <option v-for="city in cities" :key="city.id" :value="city.id">
+                                {{ city.name }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <input v-model="communityForm.type" type="text" placeholder="e.g., Subdivision">
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Homes</label>
+                        <input v-model.number="communityForm.numberOfHomes" type="number">
+                    </div>
+                    <div class="form-group">
+                        <label>Year Established</label>
+                        <input v-model.number="communityForm.yearEstablished" type="number">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input v-model="communityForm.hasAmenities" type="checkbox">
+                            Has Amenities
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" @click="closeCommunityModal" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loader -->
+        <div v-if="loading" class="loader">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

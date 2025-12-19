@@ -226,14 +226,17 @@ main {
 
 .modal-content {
     background-color: white;
-    margin: 5% auto;
-    padding: 40px;
+    margin: 2% auto;
+    padding: 20px;
     border-radius: 20px;
     width: 90%;
     max-width: 500px;
+    max-height: 90vh;           /* ADD THIS - limits height */
+    overflow-y: auto;            /* ADD THIS - makes it scrollable */
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: slideDown 0.3s ease;
 }
+
 
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -265,9 +268,10 @@ main {
 }
 
 .modal-content h2 {
-    margin-bottom: 30px;
+    margin-bottom: 15px;
     color: #333;
 }
+
 
 .form-group {
     margin-bottom: 20px;
